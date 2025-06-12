@@ -1,0 +1,83 @@
+import torch
+import torch.nn as nn
+import torch.optim as optim
+from torchvision import datasets, transforms
+from torch.utils.data import DataLoader
+
+# Define the encoder network
+class Encoder(nn.Module):
+    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=20):
+        super(Encoder, self).__init__()
+        self.fc1 = nn.Linear(input_dim, hidden_dim)
+        self.fc_mu = nn.Linear(hidden_dim, latent_dim)
+        self.fc_logvar = nn.Linear(hidden_dim, latent_dim)
+        self.relu = nn.ReLU()
+
+    def forward(self, x):
+        h = self.relu(self.fc1(x))
+        mu = self.fc_mu(h)
+        logvar = self.fc_logvar(h)
+        return mu, logvar
+
+# Define the decoder network
+class Decoder(nn.Module):
+    def __init__(self, latent_dim=20, hidden_dim=400, output_dim=784):
+        super(Decoder, self).__init__()
+        self.fc1 = nn.Linear(latent_dim, hidden_dim)
+        self.fc2 = nn.Linear(hidden_dim, output_dim)
+        self.relu = nn.ReLU()
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, z):
+        h = self.relu(self.fc1(z))
+        x_hat = self.sigmoid(self.fc2(h))
+        return x_hat
+
+# VAE model combining encoder and decoder
+class VAE(nn.Module):
+    def __init__(self, input_dim=784, hidden_dim=400, latent_dim=20):
+        super(VAE, self).__init__()
+        self.encoder = Encoder(input_dim, hidden_dim, latent_dim)
+        self.decoder = Decoder(latent_dim, hidden_dim, input_dim)
+
+    def reparameterize(self, mu, logvar):
+        std = torch.exp(0.5 * logvar)
+        eps = torch.randn_like(std)
+        return mu + eps * std
+
+    def forward(self, x):
+        mu, logvar = self.encoder(x)
+        z = self.reparameterize(mu, logvar)
+        x_hat = self.decoder(z)
+        return x_hat, mu, logvar
+
+# Loss function: reconstruction + KL divergence
+def loss_function(x_hat, x, mu, logvar):
+    BCE = nn.functional.binary_cross_entropy(x_hat, x, reduction='sum')
+    KLD = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+    return BCE + KLD
+
+# Data loading (using MNIST)
+transform = transforms.ToTensor()
+train_dataset = datasets.MNIST('./data', train=True, download=True, transform=transform)
+train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+
+# Initialize model and optimizer
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = VAE().to(device)
+optimizer = optim.Adam(model.parameters(), lr=1e-3)
+
+# Training loop
+epochs = 10
+model.train()
+for epoch in range(epochs):
+    train_loss = 0
+    for batch_idx, (data, _) in enumerate(train_loader):
+        data = data.view(-1, 784).to(device)
+        optimizer.zero_grad()
+        x_hat, mu, logvar = model(data)
+        loss = loss_function(x_hat, data, mu, logvar)
+        loss.backward()
+        train_loss += loss.item()
+        optimizer.step()
+    print(f"Epoch {epoch+1}, Average Loss: {train_loss / len(train_loader.dataset):.4f}")
