@@ -161,12 +161,6 @@ AE @ Lumissil Microsystems | SiC power systems → Cloud computing | 5 IEEE publ
 
 ---
 
-## License
-
-This project is licensed under the MIT License.
-
----
-
 ## Acknowledgements
 
 - [Kingma & Welling, 2013](https://arxiv.org/abs/1312.6114) — Original VAE paper
