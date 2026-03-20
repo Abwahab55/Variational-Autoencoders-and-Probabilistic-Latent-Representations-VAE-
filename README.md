@@ -154,7 +154,7 @@ This makes them a foundational model for unsupervised representation learning an
 ## Author
 
 **Abdul Wahab**  
-AE @ Lumissil Microsystems | SiC power systems → Cloud computing | 5 IEEE publications
+AE @ Lumissil Microsystems | SiC power systems → Cloud computing 
 
 - GitHub: [@Abwahab55](https://github.com/Abwahab55)
 - Email: wahab.engr55@yahoo.com
